@@ -149,6 +149,115 @@ The API handles various error cases:
 - API service failures
 - Network errors
 
+## Deployment to Vercel
+
+This application is configured for easy deployment to Vercel. Follow these steps:
+
+### Prerequisites
+
+1. A [Vercel account](https://vercel.com/signup) (free tier is sufficient)
+2. Your project pushed to a Git repository (GitHub, GitLab, or Bitbucket)
+
+### Deployment Steps
+
+#### Option 1: Deploy via Vercel CLI (Recommended)
+
+1. **Install Vercel CLI globally:**
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Login to Vercel:**
+   ```bash
+   vercel login
+   ```
+
+3. **Deploy from your project directory:**
+   ```bash
+   vercel
+   ```
+
+4. **Follow the prompts:**
+   - Set up and deploy? **Yes**
+   - Which scope? Select your account
+   - Link to existing project? **No** (for first deployment)
+   - What's your project's name? (Press Enter for default)
+   - In which directory is your code located? **./** (Press Enter)
+
+5. **For production deployment:**
+   ```bash
+   vercel --prod
+   ```
+
+#### Option 2: Deploy via Vercel Dashboard
+
+1. **Push your code to GitHub/GitLab/Bitbucket**
+
+2. **Go to [Vercel Dashboard](https://vercel.com/dashboard)**
+
+3. **Click "Add New Project"**
+
+4. **Import your Git repository**
+
+5. **Configure the project:**
+   - Framework Preset: **Other**
+   - Root Directory: **./** (or leave default)
+   - Build Command: Leave empty (not needed)
+   - Output Directory: Leave empty
+   - Install Command: `npm install`
+
+6. **Add Environment Variables (if needed):**
+   - Go to Project Settings → Environment Variables
+   - Add any required variables (currently none needed for this app)
+
+7. **Click "Deploy"**
+
+### Project Structure for Vercel
+
+The project is configured with:
+- `vercel.json` - Vercel configuration file
+- `api/index.js` - Serverless function entry point
+- `public/` - Static files (HTML, CSS, JS)
+- Routes are automatically handled by Vercel
+
+### Important Notes
+
+- ✅ **No environment variables required** - The app uses free public APIs
+- ✅ **Automatic HTTPS** - Vercel provides SSL certificates
+- ✅ **Global CDN** - Static files are served from edge locations
+- ✅ **Serverless functions** - API routes run as serverless functions
+- ✅ **Automatic deployments** - Every push to main branch triggers a new deployment
+
+### Post-Deployment
+
+After deployment, you'll get a URL like:
+```
+https://your-project-name.vercel.app
+```
+
+Your app will be live and accessible at this URL!
+
+### Custom Domain (Optional)
+
+1. Go to your project settings in Vercel
+2. Navigate to "Domains"
+3. Add your custom domain
+4. Follow DNS configuration instructions
+
+### Troubleshooting
+
+**Issue: API routes not working**
+- Ensure `api/index.js` exists and exports the Express app
+- Check `vercel.json` configuration
+
+**Issue: Static files not loading**
+- Verify `public/` directory structure
+- Check that files are committed to Git
+
+**Issue: Build fails**
+- Check Node.js version in `package.json` (engines field)
+- Ensure all dependencies are listed in `package.json`
+
 ## License
 
 MIT
