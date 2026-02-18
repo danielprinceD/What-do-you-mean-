@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilingual Dictionary - English & Tamil</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">
+                <span class="title-icon">📚</span>
+                Bilingual Dictionary
+            </h1>
+            <p class="subtitle">English & Tamil with Examples</p>
+        </header>
+
+        <div class="search-section">
+            <div class="search-container-wrapper">
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="wordInput" 
+                        class="search-input" 
+                        placeholder="Enter a word to search..."
+                        autocomplete="off"
+                    >
+                    <button id="searchBtn" class="search-button">
+                        <span class="button-text">Search</span>
+                        <span class="button-icon">🔍</span>
+                    </button>
+                </div>
+                <div id="suggestions" class="suggestions hidden"></div>
+            </div>
+            <div id="errorMessage" class="error-message"></div>
+        </div>
+
+        <div id="loadingIndicator" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Searching dictionary...</p>
+        </div>
+
+        <div id="results" class="results hidden">
+            <div class="word-header">
+                <h2 id="searchedWord" class="searched-word"></h2>
+                <span id="phonetic" class="phonetic"></span>
+            </div>
+
+            <div class="definitions-container">
+                <!-- English Section -->
+                <section class="definition-section english-section">
+                    <div class="section-header">
+                        <h3 class="section-title">
+                            <span class="flag-icon">🇬🇧</span>
+                            English
+                        </h3>
+                    </div>
+                    <div id="englishMeanings" class="meanings-list"></div>
+                </section>
+
+                <!-- Tamil Section -->
+                <section class="definition-section tamil-section">
+                    <div class="section-header">
+                        <h3 class="section-title">
+                            <span class="flag-icon">🇮🇳</span>
+                            Tamil
+                        </h3>
+                    </div>
+                    <div id="tamilMeanings" class="meanings-list"></div>
+                </section>
+            </div>
+        </div>
+
+        <div id="noResults" class="no-results hidden">
+            <div class="no-results-icon">😕</div>
+            <h3>Word not found</h3>
+            <p>We couldn't find the meaning for this word. Please try another word.</p>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Powered by Free Dictionary API & MyMemory Translation API</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
