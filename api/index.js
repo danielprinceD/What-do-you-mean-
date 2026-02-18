@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 
 const dictionaryRoutes = require('../routes/dictionary');
+const aiRoutes = require('../routes/ai');
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/dictionary', dictionaryRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

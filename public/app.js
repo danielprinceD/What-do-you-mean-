@@ -18,9 +18,26 @@ const audioEnVoice = document.getElementById('audioEnVoice');
 const audioTaVoice = document.getElementById('audioTaVoice');
 const audioDictSource = document.getElementById('audioDictSource');
 const dictAudioGroup = document.getElementById('dictAudioGroup');
+const tabDictionary = document.getElementById('tabDictionary');
+const tabAI = document.getElementById('tabAI');
+const panelDictionary = document.getElementById('panelDictionary');
+const panelAI = document.getElementById('panelAI');
+const aiLoading = document.getElementById('aiLoading');
+const aiContent = document.getElementById('aiContent');
+const aiError = document.getElementById('aiError');
+const aiWordTitle = document.getElementById('aiWordTitle');
+const aiEnglishBlock = document.getElementById('aiEnglishBlock');
+const aiTamilBlock = document.getElementById('aiTamilBlock');
 
 // API Base URL
 const API_BASE_URL = window.location.origin;
+
+// AI tab state: current word we requested, result or error
+let aiRequestWord = '';
+let aiResult = null;
+let aiErrorMessage = '';
+let aiFetchAbort = null;
+let lastSearchedWord = ''; // word from last successful search (used when AI tab is clicked)
 
 // Current result data for audio (word, tamilWord, phonetics)
 let lastResultData = { word: '', tamilWord: '', phonetics: [] };
@@ -163,7 +180,167 @@ document.addEventListener('DOMContentLoaded', () => {
       const url = opt && opt.value;
       if (url) playDictionaryAudio(url);
     });
+
+    // Tabs: Dictionary | AI
+    tabDictionary.addEventListener('click', () => switchTab('dictionary'));
+    tabAI.addEventListener('click', () => switchTab('ai'));
 });
+
+/**
+ * Switch between Dictionary and AI tabs
+ */
+function switchTab(tab) {
+    const isDict = tab === 'dictionary';
+    tabDictionary.classList.toggle('active', isDict);
+    tabAI.classList.toggle('active', !isDict);
+    tabDictionary.setAttribute('aria-selected', isDict);
+    tabAI.setAttribute('aria-selected', !isDict);
+    panelDictionary.classList.toggle('hidden', !isDict);
+    panelAI.classList.toggle('hidden', isDict);
+    if (!isDict) {
+        if (lastSearchedWord) {
+            aiResult = null;
+            aiErrorMessage = '';
+            renderAIPanel();
+            fetchAIForWord(lastSearchedWord);
+        } else {
+            aiResult = null;
+            aiErrorMessage = 'Search for a word first, then open the AI tab.';
+            renderAIPanel();
+        }
+    } else {
+        renderAIPanel();
+    }
+}
+
+/**
+ * Render one labeled field for the AI tab. Label can be empty to hide the row.
+ */
+function aiField(label, value) {
+    if (value == null || String(value).trim() === '') return '';
+    return `<div class="ai-field"><span class="ai-field-label">${escapeHtml(label)}</span><span class="ai-field-value">${escapeHtml(String(value).trim())}</span></div>`;
+}
+
+/**
+ * Render AI tab from API JSON: { word, english: { definition, partOfSpeech, example }, tamil: { word, meaning, example } }
+ */
+function renderAIPanel() {
+    aiLoading.classList.add('hidden');
+    aiContent.classList.add('hidden');
+    aiError.classList.add('hidden');
+    if (aiErrorMessage) {
+        aiError.textContent = aiErrorMessage;
+        aiError.classList.remove('hidden');
+        return;
+    }
+    if (aiResult) {
+        const word = aiResult.word != null ? String(aiResult.word).trim() : '';
+        const en = aiResult.english && typeof aiResult.english === 'object' ? aiResult.english : {};
+        const ta = aiResult.tamil && typeof aiResult.tamil === 'object' ? aiResult.tamil : {};
+
+        aiWordTitle.textContent = word || '—';
+        aiWordTitle.classList.toggle('empty', !word);
+
+        const enParts = [
+            aiField('Part of speech', en.partOfSpeech),
+            aiField('Definition', en.definition),
+            aiField('Example', en.example)
+        ].filter(Boolean).join('');
+        aiEnglishBlock.innerHTML = enParts || '<p class="ai-empty">No English content</p>';
+
+        const taParts = [
+            aiField('Tamil word', ta.word),
+            aiField('Meaning', ta.meaning),
+            aiField('Example', ta.example)
+        ].filter(Boolean).join('');
+        aiTamilBlock.innerHTML = taParts || '<p class="ai-empty">No Tamil content</p>';
+
+        aiContent.classList.remove('hidden');
+        return;
+    }
+    aiLoading.classList.remove('hidden');
+}
+
+/**
+ * Build AI-tab shape from dictionary API response so the AI tab can show immediately.
+ */
+function dictionaryDataToAIResult(data) {
+    if (!data || !data.word) return null;
+    const en = data.english;
+    const ta = data.tamil;
+    const english = {
+        definition: '',
+        partOfSpeech: '',
+        example: null
+    };
+    const tamil = { word: '', meaning: '', example: null };
+    if (en && en.meanings && en.meanings.length > 0) {
+        const first = en.meanings[0];
+        english.definition = first.definition || '';
+        english.partOfSpeech = first.partOfSpeech || '';
+        english.example = first.example || null;
+    }
+    if (ta) {
+        tamil.word = ta.word || '';
+        tamil.meaning = ta.meaning || '';
+        tamil.example = ta.example || null;
+    }
+    return { word: data.word, english, tamil };
+}
+
+/**
+ * Normalize /api/ai response to the shape the UI expects.
+ * API returns: { word, english: { definition, partOfSpeech, example }, tamil: { word, meaning, example } }
+ */
+function normalizeAIResponseFromAPI(data, fallbackWord) {
+    const w = (data && data.word != null) ? String(data.word).trim() : (fallbackWord || '');
+    const en = data && data.english && typeof data.english === 'object' ? data.english : {};
+    const ta = data && data.tamil && typeof data.tamil === 'object' ? data.tamil : {};
+    return {
+        word: w,
+        english: {
+            definition: en.definition != null ? String(en.definition) : '',
+            partOfSpeech: en.partOfSpeech != null ? String(en.partOfSpeech) : '',
+            example: en.example != null ? en.example : null
+        },
+        tamil: {
+            word: ta.word != null ? String(ta.word) : '',
+            meaning: ta.meaning != null ? String(ta.meaning) : '',
+            example: ta.example != null ? ta.example : null
+        }
+    };
+}
+
+/**
+ * Fetch AI explanation for word and update AI tab
+ */
+async function fetchAIForWord(word) {
+    if (aiFetchAbort) aiFetchAbort.abort();
+    aiRequestWord = word;
+    aiResult = null;
+    aiErrorMessage = '';
+    aiFetchAbort = new AbortController();
+    const signal = aiFetchAbort.signal;
+    renderAIPanel();
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/ai/${encodeURIComponent(word)}`, { signal });
+        const data = await response.json();
+        if (aiRequestWord !== word) return;
+        if (response.ok) {
+            aiResult = normalizeAIResponseFromAPI(data, word);
+            aiErrorMessage = '';
+        } else {
+            aiErrorMessage = data.error || data.message || 'AI request failed';
+        }
+    } catch (err) {
+        if (aiRequestWord !== word) return;
+        if (err.name === 'AbortError') return;
+        aiErrorMessage = err.message || 'Failed to load AI explanation';
+    } finally {
+        aiFetchAbort = null;
+        renderAIPanel();
+    }
+}
 
 /**
  * Search for word meaning
@@ -210,7 +387,9 @@ async function searchWord() {
  */
 function displayResults(data) {
     hideAll();
+    switchTab('dictionary');
 
+    lastSearchedWord = data.word || '';
     lastResultData = {
       word: data.word,
       tamilWord: (data.tamil && data.tamil.word) ? data.tamil.word : data.word,
@@ -271,7 +450,7 @@ function displayResults(data) {
     }
     
     results.classList.remove('hidden');
-    
+
     // Scroll to results
     results.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

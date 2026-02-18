@@ -4,6 +4,7 @@ const path = require('path');
 require('dotenv').config();
 
 const dictionaryRoutes = require('./routes/dictionary');
+const aiRoutes = require('./routes/ai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +19,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
 app.use('/api/dictionary', dictionaryRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

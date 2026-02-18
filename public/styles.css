@@ -274,6 +274,191 @@ body {
     display: none;
 }
 
+/* Result tabs: Dictionary | AI */
+.result-tabs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.25rem;
+    background: var(--card-bg);
+    border-radius: 1rem;
+    border: 1px solid var(--border-color);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.result-tab {
+    padding: 0.6rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.result-tab:hover {
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+}
+
+.result-tab.active {
+    color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.15);
+}
+
+.result-tab-sep {
+    color: var(--border-color);
+    font-weight: 400;
+    user-select: none;
+}
+
+.result-panel {
+    animation: fadeIn 0.3s ease;
+}
+
+.result-panel.hidden {
+    display: none !important;
+}
+
+/* AI tab loading & error */
+.ai-loading {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-secondary);
+}
+
+.ai-loading .spinner {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 1rem;
+}
+
+.ai-loading.hidden,
+.ai-content.hidden,
+.ai-error.hidden {
+    display: none !important;
+}
+
+.ai-error {
+    padding: 1.5rem;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 0.75rem;
+    border-left: 4px solid var(--error-color);
+    color: var(--error-color);
+}
+
+/* AI tab layout: matches API JSON (word, english, tamil) */
+.ai-word-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: var(--card-bg);
+    border-radius: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.ai-word-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.ai-word-title.empty {
+    color: var(--text-muted);
+}
+
+.ai-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 0.5rem;
+}
+
+.ai-cards {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.ai-card {
+    background: var(--card-bg);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border-color);
+}
+
+.ai-card-heading {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ai-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.ai-field {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem 1rem;
+    align-items: start;
+}
+
+.ai-field-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.ai-field-value {
+    font-size: 1rem;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.ai-card-english .ai-field-value {
+    border-left: 3px solid var(--primary-color);
+    padding-left: 0.75rem;
+}
+
+.ai-card-tamil .ai-field-value {
+    border-left: 3px solid var(--secondary-color);
+    padding-left: 0.75rem;
+}
+
+.ai-empty {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
 .word-header {
     text-align: center;
     margin-bottom: 2rem;

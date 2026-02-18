@@ -15,6 +15,7 @@ async function getEnglishMeaning(word) {
         }
       }
     );
+    console.log(response.data);
 
     if (response.data && response.data.length > 0) {
       const wordData = response.data[0];

@@ -6,8 +6,9 @@ A RESTful API built with Express.js that provides word definitions in both Engli
 
 - ✅ Get English word definitions with examples
 - ✅ Get Tamil translations with examples
+- ✅ **AI tab** – English & Tamil via Hugging Face (optional API key; falls back to dictionary)
 - ✅ **Autocomplete suggestions** while typing
-- ✅ Beautiful, modern web UI
+- ✅ Beautiful, modern web UI with **Dictionary | AI** tabs
 - ✅ Responsive design (mobile-friendly)
 - ✅ Keyboard navigation (Arrow keys, Enter, Escape)
 - ✅ RESTful API endpoints
@@ -22,10 +23,21 @@ A RESTful API built with Express.js that provides word definitions in both Engli
 npm install
 ```
 
-3. Copy `.env.example` to `.env` (optional, for custom configuration):
-```bash
-cp .env.example .env
-```
+3. **Hugging Face API key (for AI tab)**  
+   The AI tab uses the [Hugging Face Inference API](https://huggingface.co/inference-api). Without a key, the app falls back to the free dictionary/translation APIs.
+
+   - Go to [Hugging Face → Settings → Access Tokens](https://huggingface.co/settings/tokens).
+   - Create a **Fine-grained** token (not Classic), and under permissions enable **Inference** or **Inference Providers**. (A plain Read token will return 403.)
+   - Copy `env.example` to `.env`:  
+     `cp env.example .env`
+   - Open `.env` and set your token:
+     ```bash
+     HUGGINGFACE_API_KEY=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+     ```
+   - Optional: set a different model (default is `Qwen/Qwen2.5-7B-Instruct` for the router API):
+     ```bash
+     HUGGINGFACE_MODEL=Qwen/Qwen2.5-7B-Instruct
+     ```
 
 4. Start the server:
 ```bash
@@ -97,6 +109,31 @@ curl -X POST http://localhost:3000/api/dictionary \
   -d '{"word": "beautiful"}'
 ```
 
+### GET /api/ai/:word
+Get a summary of the word in English and Tamil (uses the same free dictionary and translation APIs as the Dictionary tab; no API key required).
+
+**Example:**
+```bash
+curl http://localhost:3000/api/ai/hello
+```
+
+**Response:**
+```json
+{
+  "word": "hello",
+  "english": {
+    "definition": "used as a greeting or to begin a phone conversation.",
+    "partOfSpeech": "noun",
+    "example": "Hello, how are you?"
+  },
+  "tamil": {
+    "word": "வணக்கம்",
+    "meaning": "...",
+    "example": "..."
+  }
+}
+```
+
 ### GET /api/dictionary/suggestions/:query
 Get word suggestions for autocomplete.
 
@@ -123,10 +160,13 @@ Serves the web interface.
 ```
 express-dictionary/
 ├── server.js              # Main Express application
+├── api/index.js           # Vercel serverless entry
 ├── routes/
-│   └── dictionary.js      # Dictionary routes
+│   ├── dictionary.js      # Dictionary routes
+│   └── ai.js              # AI (ChatGPT) routes
 ├── services/
-│   └── dictionaryService.js  # Dictionary API service
+│   ├── dictionaryService.js  # Dictionary API service
+│   └── aiService.js          # AI tab summary (free APIs)
 ├── public/                # Frontend files
 │   ├── index.html        # Main HTML page
 │   ├── styles.css        # Styling
@@ -206,9 +246,9 @@ This application is configured for easy deployment to Vercel. Follow these steps
    - Output Directory: Leave empty
    - Install Command: `npm install`
 
-6. **Add Environment Variables (if needed):**
+6. **Add Environment Variables (optional, for AI tab):**
    - Go to Project Settings → Environment Variables
-   - Add any required variables (currently none needed for this app)
+   - Add `HUGGINGFACE_API_KEY` with your [Hugging Face token](https://huggingface.co/settings/tokens) to enable the AI tab
 
 7. **Click "Deploy"**
 
