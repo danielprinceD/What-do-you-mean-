@@ -48,6 +48,40 @@
             <div class="word-header">
                 <h2 id="searchedWord" class="searched-word"></h2>
                 <span id="phonetic" class="phonetic"></span>
+                <div id="audioToolbar" class="audio-toolbar">
+                    <span class="audio-label">Listen:</span>
+                    <div class="audio-buttons">
+                        <div class="audio-group" data-lang="en">
+                            <button type="button" class="audio-btn" id="audioEnBtn" title="English pronunciation">
+                                <span class="audio-btn-icon">🔊</span>
+                                <span class="audio-btn-text">English</span>
+                            </button>
+                            <select id="audioEnVoice" class="audio-voice-select" aria-label="English voice">
+                                <option value="en-GB-male">UK Male</option>
+                                <option value="en-GB-female">UK Female</option>
+                                <option value="en-US-male">US Male</option>
+                                <option value="en-US-female">US Female</option>
+                            </select>
+                        </div>
+                        <div class="audio-group" data-lang="ta">
+                            <button type="button" class="audio-btn" id="audioTaBtn" title="Tamil pronunciation">
+                                <span class="audio-btn-icon">🔊</span>
+                                <span class="audio-btn-text">Tamil</span>
+                            </button>
+                            <select id="audioTaVoice" class="audio-voice-select" aria-label="Tamil voice">
+                                <option value="ta-male">Tamil Male</option>
+                                <option value="ta-female">Tamil Female</option>
+                            </select>
+                        </div>
+                        <div id="dictAudioGroup" class="audio-group audio-group-dict hidden">
+                            <button type="button" class="audio-btn" id="audioDictBtn" title="Dictionary pronunciation">
+                                <span class="audio-btn-icon">🎧</span>
+                                <span class="audio-btn-text">Dictionary</span>
+                            </button>
+                            <select id="audioDictSource" class="audio-voice-select" aria-label="Dictionary accent"></select>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="definitions-container">
@@ -60,6 +94,7 @@
                         </h3>
                     </div>
                     <div id="englishMeanings" class="meanings-list"></div>
+                    <div id="englishSlang" class="slang-section hidden"></div>
                 </section>
 
                 <!-- Tamil Section -->

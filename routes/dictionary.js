@@ -4,6 +4,31 @@ const axios = require('axios');
 const dictionaryService = require('../services/dictionaryService');
 
 /**
+ * GET /api/dictionary/suggestions/:query
+ * Get word suggestions for autocomplete (must be before /:word)
+ */
+router.get('/suggestions/:query', async (req, res) => {
+  try {
+    const query = req.params.query.toLowerCase().trim();
+    if (!query || query.length < 2) {
+      return res.json({ suggestions: [] });
+    }
+    const response = await axios.get('https://api.datamuse.com/sug', {
+      params: { s: query, max: 10 },
+      timeout: 5000
+    });
+    const suggestions = (response.data || [])
+      .map(item => item.word)
+      .filter(word => word && word.length > 0)
+      .slice(0, 8);
+    res.json({ suggestions });
+  } catch (error) {
+    console.error('Error fetching suggestions:', error);
+    res.json({ suggestions: [] });
+  }
+});
+
+/**
  * GET /api/dictionary/:word
  * Get word definitions in English and Tamil
  */
@@ -18,15 +43,21 @@ router.get('/:word', async (req, res) => {
       });
     }
 
-    // Fetch both English and Tamil meanings in parallel
-    const [englishData, tamilData] = await Promise.allSettled([
+    // Fetch English, Tamil, and slang in parallel
+    const [englishData, tamilData, slangData] = await Promise.allSettled([
       dictionaryService.getEnglishMeaning(word),
-      dictionaryService.getTamilMeaning(word)
+      dictionaryService.getTamilMeaning(word),
+      dictionaryService.getEnglishSlang(word)
     ]);
+
+    let english = englishData.status === 'fulfilled' ? englishData.value : { error: englishData.reason?.message || 'Failed to fetch English meaning' };
+    if (englishData.status === 'fulfilled' && slangData.status === 'fulfilled' && slangData.value.length > 0) {
+      english = { ...english, slangDefinitions: slangData.value };
+    }
 
     const response = {
       word: word,
-      english: englishData.status === 'fulfilled' ? englishData.value : { error: englishData.reason?.message || 'Failed to fetch English meaning' },
+      english,
       tamil: tamilData.status === 'fulfilled' ? tamilData.value : { error: tamilData.reason?.message || 'Failed to fetch Tamil meaning' }
     };
 
@@ -66,15 +97,21 @@ router.post('/', async (req, res) => {
 
     const searchWord = word.toLowerCase().trim();
     
-    // Fetch both English and Tamil meanings in parallel
-    const [englishData, tamilData] = await Promise.allSettled([
+    // Fetch English, Tamil, and slang in parallel
+    const [englishData, tamilData, slangData] = await Promise.allSettled([
       dictionaryService.getEnglishMeaning(searchWord),
-      dictionaryService.getTamilMeaning(searchWord)
+      dictionaryService.getTamilMeaning(searchWord),
+      dictionaryService.getEnglishSlang(searchWord)
     ]);
+
+    let english = englishData.status === 'fulfilled' ? englishData.value : { error: englishData.reason?.message || 'Failed to fetch English meaning' };
+    if (englishData.status === 'fulfilled' && slangData.status === 'fulfilled' && slangData.value.length > 0) {
+      english = { ...english, slangDefinitions: slangData.value };
+    }
 
     const response = {
       word: searchWord,
-      english: englishData.status === 'fulfilled' ? englishData.value : { error: englishData.reason?.message || 'Failed to fetch English meaning' },
+      english,
       tamil: tamilData.status === 'fulfilled' ? tamilData.value : { error: tamilData.reason?.message || 'Failed to fetch Tamil meaning' }
     };
 
@@ -94,40 +131,6 @@ router.post('/', async (req, res) => {
       error: 'Internal server error',
       message: error.message
     });
-  }
-});
-
-/**
- * GET /api/dictionary/suggestions/:query
- * Get word suggestions for autocomplete
- */
-router.get('/suggestions/:query', async (req, res) => {
-  try {
-    const query = req.params.query.toLowerCase().trim();
-    
-    if (!query || query.length < 2) {
-      return res.json({ suggestions: [] });
-    }
-
-    // Use Datamuse API for word suggestions
-    const response = await axios.get('https://api.datamuse.com/sug', {
-      params: {
-        s: query,
-        max: 10
-      },
-      timeout: 5000
-    });
-
-    const suggestions = response.data
-      .map(item => item.word)
-      .filter(word => word.length > 0)
-      .slice(0, 8); // Limit to 8 suggestions
-
-    res.json({ suggestions });
-  } catch (error) {
-    console.error('Error fetching suggestions:', error);
-    // Return empty suggestions on error instead of failing
-    res.json({ suggestions: [] });
   }
 });
 

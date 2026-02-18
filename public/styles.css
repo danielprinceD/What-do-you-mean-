@@ -298,6 +298,157 @@ body {
     font-style: italic;
 }
 
+/* Audio toolbar */
+.audio-toolbar {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+}
+
+.audio-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.audio-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+}
+
+.audio-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.audio-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.85rem;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.audio-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.audio-btn-icon {
+    font-size: 1rem;
+}
+
+.audio-voice-select {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.4rem;
+    cursor: pointer;
+    font-family: inherit;
+    min-width: 0;
+}
+
+.audio-group-dict.hidden {
+    display: none !important;
+}
+
+/* Slang section */
+.slang-section {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px dashed var(--border-color);
+}
+
+.slang-section.hidden {
+    display: none !important;
+}
+
+.slang-heading {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.slang-item {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 1rem;
+    background: rgba(99, 102, 241, 0.06);
+    border-radius: 0.75rem;
+    border-left: 3px solid var(--secondary-color);
+    margin-bottom: 0.75rem;
+}
+
+.slang-item:last-child {
+    margin-bottom: 0;
+}
+
+.slang-play-btn {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.slang-play-btn:hover {
+    background: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
+}
+
+.slang-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.slang-definition {
+    font-size: 1rem;
+    color: var(--text-primary);
+    line-height: 1.6;
+    margin-bottom: 0.5rem;
+}
+
+.slang-example {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 0.35rem;
+}
+
+.slang-votes {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
 /* Definitions Container */
 .definitions-container {
     display: grid;
@@ -520,6 +671,23 @@ body {
 
     .section-title {
         font-size: 1.25rem;
+    }
+
+    .audio-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .audio-buttons {
+        width: 100%;
+    }
+
+    .audio-group {
+        width: 100%;
+    }
+
+    .audio-btn {
+        flex: 1;
     }
 }
 

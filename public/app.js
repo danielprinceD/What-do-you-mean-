@@ -10,9 +10,97 @@ const phonetic = document.getElementById('phonetic');
 const englishMeanings = document.getElementById('englishMeanings');
 const tamilMeanings = document.getElementById('tamilMeanings');
 const suggestions = document.getElementById('suggestions');
+const englishSlangEl = document.getElementById('englishSlang');
+const audioEnBtn = document.getElementById('audioEnBtn');
+const audioTaBtn = document.getElementById('audioTaBtn');
+const audioDictBtn = document.getElementById('audioDictBtn');
+const audioEnVoice = document.getElementById('audioEnVoice');
+const audioTaVoice = document.getElementById('audioTaVoice');
+const audioDictSource = document.getElementById('audioDictSource');
+const dictAudioGroup = document.getElementById('dictAudioGroup');
 
 // API Base URL
 const API_BASE_URL = window.location.origin;
+
+// Current result data for audio (word, tamilWord, phonetics)
+let lastResultData = { word: '', tamilWord: '', phonetics: [] };
+
+// Speech synthesis: voice lists (populated when voices load)
+let voiceMap = { en: {}, ta: {} };
+let voicesReady = false;
+
+function isFemaleVoice(voice) {
+  const n = (voice.name || '').toLowerCase();
+  return /female|woman|samantha|kate|karen|victoria|moira|lekha|female/i.test(n);
+}
+
+function loadVoices() {
+  const voices = speechSynthesis.getVoices();
+  voiceMap = { en: {}, ta: {} };
+  const gbVoices = [], usVoices = [], taVoices = [];
+  voices.forEach(v => {
+    const lang = (v.lang || '').toLowerCase();
+    if (lang.startsWith('en-gb')) gbVoices.push(v);
+    else if (lang.startsWith('en-us') || (lang.startsWith('en') && !lang.includes('gb'))) usVoices.push(v);
+    else if (lang.startsWith('ta')) taVoices.push(v);
+  });
+  if (gbVoices.length >= 2) {
+    const f = gbVoices.find(isFemaleVoice), m = gbVoices.find(v => !isFemaleVoice(v));
+    if (m) voiceMap.en['en-GB-male'] = m;
+    if (f) voiceMap.en['en-GB-female'] = f;
+  } else if (gbVoices.length === 1) {
+    voiceMap.en['en-GB-male'] = voiceMap.en['en-GB-female'] = gbVoices[0];
+  }
+  if (usVoices.length >= 2) {
+    const f = usVoices.find(isFemaleVoice), m = usVoices.find(v => !isFemaleVoice(v));
+    if (m) voiceMap.en['en-US-male'] = m;
+    if (f) voiceMap.en['en-US-female'] = f;
+  } else if (usVoices.length === 1) {
+    voiceMap.en['en-US-male'] = voiceMap.en['en-US-female'] = usVoices[0];
+  }
+  if (taVoices.length >= 2) {
+    const f = taVoices.find(isFemaleVoice), m = taVoices.find(v => !isFemaleVoice(v));
+    if (m) voiceMap.ta['ta-male'] = m;
+    if (f) voiceMap.ta['ta-female'] = f;
+  } else if (taVoices.length === 1) {
+    voiceMap.ta['ta-male'] = voiceMap.ta['ta-female'] = taVoices[0];
+  }
+  // Fallbacks: any English / Tamil
+  ['en-GB-male', 'en-GB-female', 'en-US-male', 'en-US-female'].forEach(k => {
+    if (!voiceMap.en[k]) {
+      const v = voices.find(x => (x.lang || '').toLowerCase().startsWith('en'));
+      if (v) voiceMap.en[k] = v;
+    }
+  });
+  ['ta-male', 'ta-female'].forEach(k => {
+    if (!voiceMap.ta[k]) {
+      const v = voices.find(x => (x.lang || '').toLowerCase().startsWith('ta'));
+      if (v) voiceMap.ta[k] = v;
+    }
+  });
+  voicesReady = true;
+}
+
+if (typeof speechSynthesis !== 'undefined') {
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function speakWithVoice(text, voiceKey, lang) {
+  if (!text || !voicesReady) return;
+  speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  const voice = (lang === 'ta' ? voiceMap.ta : voiceMap.en)[voiceKey];
+  if (voice) utterance.voice = voice;
+  utterance.lang = lang === 'ta' ? 'ta-IN' : (voiceKey.startsWith('en-GB') ? 'en-GB' : 'en-US');
+  utterance.rate = 0.9;
+  speechSynthesis.speak(utterance);
+}
+
+function playDictionaryAudio(url) {
+  const audio = new Audio(url);
+  audio.play().catch(() => {});
+}
 
 // Suggestions state
 let suggestionTimeout = null;
@@ -58,6 +146,23 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Search button click
     searchBtn.addEventListener('click', searchWord);
+
+    // Audio: English TTS
+    audioEnBtn.addEventListener('click', () => {
+      const voiceKey = audioEnVoice.value;
+      speakWithVoice(lastResultData.word, voiceKey, 'en');
+    });
+    // Audio: Tamil TTS
+    audioTaBtn.addEventListener('click', () => {
+      const voiceKey = audioTaVoice.value;
+      speakWithVoice(lastResultData.tamilWord || lastResultData.word, voiceKey, 'ta');
+    });
+    // Audio: Dictionary (streamed URL)
+    audioDictBtn.addEventListener('click', () => {
+      const opt = audioDictSource.selectedOptions[0];
+      const url = opt && opt.value;
+      if (url) playDictionaryAudio(url);
+    });
 });
 
 /**
@@ -105,10 +210,31 @@ async function searchWord() {
  */
 function displayResults(data) {
     hideAll();
-    
+
+    lastResultData = {
+      word: data.word,
+      tamilWord: (data.tamil && data.tamil.word) ? data.tamil.word : data.word,
+      phonetics: (data.english && data.english.phonetics) ? data.english.phonetics : []
+    };
+
     // Display word header
     searchedWord.textContent = data.word;
     phonetic.textContent = data.english?.phonetic || '';
+
+    // Dictionary audio (phonetics from API)
+    audioDictSource.innerHTML = '';
+    if (lastResultData.phonetics.length > 0) {
+      dictAudioGroup.classList.remove('hidden');
+      lastResultData.phonetics.forEach((p, i) => {
+        const opt = document.createElement('option');
+        opt.value = p.audio;
+        opt.textContent = p.accent === 'uk' ? 'UK' : 'US';
+        if (i === 0) opt.selected = true;
+        audioDictSource.appendChild(opt);
+      });
+    } else {
+      dictAudioGroup.classList.add('hidden');
+    }
     
     // Display English meanings
     if (data.english && !data.english.error && data.english.meanings) {
@@ -133,7 +259,15 @@ function displayResults(data) {
                     ${data.tamil?.error || 'Tamil meaning not available'}
                 </p>
             </div>
-        `;
+            `;
+    }
+
+    // Slang / informal (British & American)
+    if (data.english && data.english.slangDefinitions && data.english.slangDefinitions.length > 0) {
+        displayEnglishSlang(data.english.slangDefinitions);
+    } else {
+        englishSlangEl.classList.add('hidden');
+        englishSlangEl.innerHTML = '';
     }
     
     results.classList.remove('hidden');
@@ -226,6 +360,54 @@ function displayTamilMeanings(tamilData) {
     
     meaningDiv.innerHTML = html;
     tamilMeanings.appendChild(meaningDiv);
+}
+
+/**
+ * Strip Urban Dictionary-style [word] links and HTML for display/TTS
+ */
+function stripSlangMarkup(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.innerHTML = text;
+    let plain = div.textContent || text;
+    return plain.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Display English slang / informal definitions (British & American)
+ */
+function displayEnglishSlang(slangDefinitions) {
+    englishSlangEl.innerHTML = '';
+    englishSlangEl.classList.remove('hidden');
+    const heading = document.createElement('h4');
+    heading.className = 'slang-heading';
+    heading.innerHTML = '🇬🇧🇺🇸 Slang / Informal';
+    englishSlangEl.appendChild(heading);
+    slangDefinitions.forEach((item, index) => {
+        const def = stripSlangMarkup(item.definition);
+        const example = item.example ? stripSlangMarkup(item.example) : '';
+        const card = document.createElement('div');
+        card.className = 'slang-item';
+        const playBtn = document.createElement('button');
+        playBtn.type = 'button';
+        playBtn.className = 'slang-play-btn';
+        playBtn.title = 'Listen (English voice)';
+        playBtn.innerHTML = '🔊';
+        playBtn.addEventListener('click', () => {
+            const voiceKey = audioEnVoice.value;
+            const toSpeak = example ? `${def} Example: ${example}` : def;
+            speakWithVoice(toSpeak, voiceKey, 'en');
+        });
+        card.innerHTML = `
+            <div class="slang-content">
+                <p class="slang-definition">${escapeHtml(def)}</p>
+                ${example ? `<p class="slang-example">"${escapeHtml(example)}"</p>` : ''}
+                ${(item.thumbsUp || item.thumbsDown) ? `<span class="slang-votes">👍 ${item.thumbsUp || 0} 👎 ${item.thumbsDown || 0}</span>` : ''}
+            </div>
+        `;
+        card.prepend(playBtn);
+        englishSlangEl.appendChild(card);
+    });
 }
 
 /**

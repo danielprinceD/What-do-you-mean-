@@ -38,9 +38,26 @@ async function getEnglishMeaning(word) {
         });
       }
 
+      // Extract phonetics with audio URLs (UK/US when available)
+      const phonetics = [];
+      if (wordData.phonetics && Array.isArray(wordData.phonetics)) {
+        wordData.phonetics.forEach(p => {
+          if (p.audio) {
+            const audioUrl = p.audio.startsWith('http') ? p.audio : `https:${p.audio}`;
+            const isBritish = /_gb_|uk|british/i.test(audioUrl);
+            phonetics.push({
+              text: p.text || null,
+              audio: audioUrl,
+              accent: isBritish ? 'uk' : 'us'
+            });
+          }
+        });
+      }
+
       return {
         word: wordData.word || word,
         phonetic: wordData.phonetic || null,
+        phonetics: phonetics,
         meanings: meanings,
         sourceUrls: wordData.sourceUrls || []
       };
@@ -140,7 +157,42 @@ async function getTamilMeaning(word) {
   }
 }
 
+/**
+ * Get slang/informal definitions (British & American) for a word
+ * Uses Unofficial Urban Dictionary API
+ */
+async function getEnglishSlang(word) {
+  try {
+    const response = await axios.get(
+      'https://unofficialurbandictionaryapi.com/api/search',
+      {
+        params: {
+          term: word,
+          limit: 5
+        },
+        timeout: 8000
+      }
+    );
+
+    const data = response.data;
+    if (!data) return [];
+    const rawList = Array.isArray(data) && data.length > 0
+      ? (data[0].list || data[0])
+      : (data.list || data);
+    const list = Array.isArray(rawList) ? rawList : [];
+    return list.slice(0, 5).map(item => ({
+      definition: (item.definition || item.meaning || '').trim(),
+      example: item.example ? String(item.example).trim() : null,
+      thumbsUp: item.thumbs_up || 0,
+      thumbsDown: item.thumbs_down || 0
+    })).filter(s => s.definition.length > 0);
+  } catch (error) {
+    return [];
+  }
+}
+
 module.exports = {
   getEnglishMeaning,
-  getTamilMeaning
+  getTamilMeaning,
+  getEnglishSlang
 };
